@@ -11,12 +11,14 @@ const promiseChunk = async function*({ promiseFunctions, limit, perChunkTimeout,
     let chunks = [];
 
     for (let j = 0; j < limit; j++) {
-      chunks.push(
-        promiseTimeout({
-          promise: new Promise(promiseFunctions[i + j]),
-          timeout: perPromiseTimeout,
-        })
-      );
+      if (i + j < promiseFunctionsLength) {
+        chunks.push(
+          promiseTimeout({
+            promise: new Promise(promiseFunctions[i + j]),
+            timeout: perPromiseTimeout,
+          })
+        );
+      }
     }
 
     const allPromises = Promise.all(chunks).catch(err => {

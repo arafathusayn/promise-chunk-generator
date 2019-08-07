@@ -1,15 +1,16 @@
-const promiseTimeout = require("./promise-timeout");
-const promiseChunk = require("./promise-chunk");
+const promiseChunkGenerator = require("./promise-chunk-generator");
 
-const limit = 7;
-const perChunkTimeout = 7 * 1000;
-const perPromiseTimeout = 4 * 1000;
+const concurrency = 7;
+const perChunkTimeoutDuration = 10 * 1000;
+const perPromiseTimeoutDuration = 4 * 1000;
+const promiseRetry = 2;
 
 let promiseFunctions = [];
 
 for (let i = 0; i < 20; i++) {
   const promiseFunction = resolve => {
-    const timeout = Math.round(Math.random() * 5 + 1);
+    console.log(i + " Promise running");
+    const timeout = Math.round(Math.random() * 4 + 1);
     const timeoutId = setTimeout(() => {
       clearTimeout(timeoutId);
       resolve(timeout);
@@ -20,26 +21,37 @@ for (let i = 0; i < 20; i++) {
 }
 
 (async () => {
-  gen = await promiseChunk({
+  gen = await promiseChunkGenerator({
     promiseFunctions,
-    limit,
-    perChunkTimeout,
-    perPromiseTimeout,
+    concurrency,
+    perChunkTimeoutDuration,
+    perPromiseTimeoutDuration,
+    promiseRetry,
   });
 
-  let genetorObject = {
+  let generatorObject = {
     done: false,
   };
 
-  while (!genetorObject.done) {
+  while (true) {
     const startingTime = Date.now();
 
-    genetorObject = await gen.next();
+    generatorObject = await gen.next();
 
-    console.log(genetorObject);
+    if (!generatorObject || generatorObject.done) {
+      break;
+    }
+
+    generatorObject.value.forEach(v => {
+      if (v.promiseRejected) {
+        console.log(v);
+      }
+    });
 
     const endingTime = Date.now();
 
     console.log(endingTime - startingTime);
   }
+
+  console.log("END");
 })();

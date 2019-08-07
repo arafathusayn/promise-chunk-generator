@@ -1,89 +1,70 @@
 const pTF = require("./promise-timeout");
-
-const rejectWithDelay = (reason, delay = 100) => {
-  return new Promise(function(_, reject) {
-    setTimeout(reject.bind(null, reason), delay);
-  });
-}
-
-const pCF = ({ error, returnRejectedPromiseExecutor, promise, retryPromise, promiseRetry }) => {
-  for (let i = 0; i < promiseRetry; i++) {}
-
-  if (returnRejectedPromiseExecutor) {
-    return {
-      promiseRejected: true,
-      promiseExecutor: (promise && promise.__executor) || null,
-      errorMessage: (error && error.message) || null,
-    };
-  } else {
-    console.error(error);
-  }
-};
-
-const cPCF = err => {
-  console.error(err);
-};
+const pCF = require("./promise-catch-function");
+const pCCF = require("./promise-chunk-catch-function");
 
 const promiseChunkGenerator = async function*({
-  promiseFunctions,
+  promiseExecutors,
   concurrency,
   perChunkTimeoutDuration,
   perPromiseTimeoutDuration,
   promiseTimeoutFunction,
   promiseCatchFunction,
   returnRejectedPromiseExecutor,
-  chunkPromisesCatchFunction,
-  promiseRetry,
+  promiseChunkCatchFunction,
 }) {
-  promiseFunctions = promiseFunctions || [];
+  promiseExecutors = promiseExecutors || [];
   concurrency = concurrency || 1;
   perChunkTimeoutDuration = perChunkTimeoutDuration || 5 * 60 * 1000;
   perPromiseTimeoutDuration = perPromiseTimeoutDuration || 2 * 60 * 1000;
   promiseTimeoutFunction = promiseTimeoutFunction || pTF;
   promiseCatchFunction = promiseCatchFunction || pCF;
-  chunkPromisesCatchFunction = chunkPromisesCatchFunction || cPCF;
+  promiseChunkCatchFunction = promiseChunkCatchFunction || pCCF;
   returnRejectedPromiseExecutor = returnRejectedPromiseExecutor || true;
-  promiseRetry = promiseRetry || 1;
 
-  const promiseFunctionsLength = promiseFunctions.length;
+  const promiseExecutorsLength = promiseExecutors.length;
 
-  for (let i = 0; i < promiseFunctionsLength; i += concurrency) {
-    let chunks = [];
+  for (let i = 0; i < promiseExecutorsLength; i += concurrency) {
+    let chunk = [];
 
     for (let j = 0; j < concurrency; j++) {
-      if (i + j < promiseFunctionsLength) {
+      if (i + j < promiseExecutorsLength) {
         let promise = promiseTimeoutFunction({
-          promise: new Promise(promiseFunctions[i + j]),
+          promise: new Promise(promiseExecutors[i + j]),
           timeoutDuration: perPromiseTimeoutDuration,
         });
 
-        promise.__executor = promiseFunctions[i + j];
+        promise.__executor = promiseExecutors[i + j];
 
-        chunks.push(promise);
+        chunk.push(promise);
       }
     }
 
-    const retryPromise = promise => promise.catch(_ => new Promise(promise.__executor));
-
     const promisesCatcher = promises =>
       promises.map(promise =>
-        promise.catch(err =>
+        promise.catch(error =>
           promiseCatchFunction({
-            err,
+            error,
             returnRejectedPromiseExecutor,
             promise,
-            retryPromise,
-            promiseRetry,
           })
         )
       );
 
-    const allPromises = Promise.all(promisesCatcher(chunks)).catch(chunkPromisesCatchFunction);
+    let chunkPromise = Promise.all(promisesCatcher(chunk));
+
+    chunkPromise.__executors = chunk.map(promise => promise.__executor);
+
+    const promiseChunkCatcher = promise => error =>
+      promiseChunkCatchFunction({
+        error,
+        returnRejectedPromiseExecutor,
+        promise,
+      });
 
     yield await promiseTimeoutFunction({
-      promise: allPromises,
+      promise: chunkPromise,
       timeoutDuration: perChunkTimeoutDuration,
-    });
+    }).catch(promiseChunkCatcher(chunkPromise));
   }
 };
 

@@ -5,7 +5,8 @@ module.exports = ({ promise, timeoutDuration }) => {
   const timeoutPromise = new Promise((_, reject) => {
     const timeoutId = setTimeout(() => {
       clearTimeout(timeoutId);
-      reject(new Error(`Promise timeout occured after ${timeoutDuration} ms`));
+      const reason = `Promise timeout occured after ${timeoutDuration} ms`;
+      reject(new Error(reason), reason);
     }, timeoutDuration);
   });
 

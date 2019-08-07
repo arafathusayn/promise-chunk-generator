@@ -1,25 +1,26 @@
 {
-    "name": "promise-chunk-generator",
-    "version": "1.0.0",
-    "description": "A library to find a deeply nested property of an object by name",
-    "main": "index.js",
-    "scripts": {
-      "minify": "uglifyjs --compress --mangle --output index.js -- src/promise-chunk-generator.js"
-    },
-    "repository": {
-      "type": "git",
-      "url": "git+ssh://git@github.com/arafathusayn/promise-chunk-generator.git"
-    },
-    "keywords": [
-      "Object",
-      "Property",
-      "Search"
-    ],
-    "author": "Arafat Husayn",
-    "license": "MIT",
-    "bugs": {
-      "url": "https://github.com/arafathusayn/promise-chunk-generator/issues"
-    },
-    "homepage": "https://github.com/arafathusayn/promise-chunk-generator#readme"
-  }
-  
+  "name": "promise-chunk-generator",
+  "version": "1.0.0",
+  "description": "An async generator that takes an array of promise executor functions and creates promises in chunks with fault-tolerance",
+  "main": "index.js",
+  "scripts": {
+    "minify": "uglifyjs --compress --mangle --output index.js -- src/promise-chunk-generator.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/arafathusayn/promise-chunk-generator.git"
+  },
+  "keywords": [
+    "Promise Chunk",
+    "Promise",
+    "Chunk",
+    "Async",
+    "Generator"
+  ],
+  "author": "Arafat Husayn",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/arafathusayn/promise-chunk-generator/issues"
+  },
+  "homepage": "https://github.com/arafathusayn/promise-chunk-generator#readme"
+}
